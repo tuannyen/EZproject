@@ -21,23 +21,22 @@ def extraire_dernier_numero(reference):
 
 mois = input("Entrez le mois (01 à 12) : ").strip()
 annee = input("Entrez l'année (YYYY) : ").strip()
-EXCEL_FILE = f"TABLEAU VENTE-POUR-DE-BON-{mois}-{annee}.xlsx"
+EXCEL_FILE = f"ventes_{mois}_{annee}.xlsx"
 
 try:
     df_old = pd.read_excel(EXCEL_FILE, sheet_name="matrice", skiprows=7)
     if "Numéro de facture" in df_old.columns:
         factures_existantes = df_old["Numéro de facture"].dropna().astype(str).tolist()
-        if factures_existantes:
-            derniere_facture = factures_existantes[-1]
-        else:
-            derniere_facture = None
+        derniere_facture = factures_existantes[-1] if factures_existantes else None
     else:
         factures_existantes = []
+        derniere_facture = None
 except Exception as e:
     print(f"Erreur lors de la lecture du fichier : {e}")
     factures_existantes = []
+    derniere_facture = None
 
-if 'derniere_facture' in locals() and derniere_facture is not None:
+if derniere_facture is not None:
     derniere_commande_excel = FacturetoCommande(derniere_facture)
     dernier_num_commande = extraire_dernier_numero(derniere_facture)
 else:
@@ -45,12 +44,12 @@ else:
     dernier_num_commande = input("Entrez le dernier numéro de commande : ")
 
 options = webdriver.ChromeOptions()
-options.add_argument(r"user-data-dir=C:\Users\tuand\AppData\Local\Google\Chrome\User Data")
+options.add_argument(r"user-data-dir=CHEMIN/UTILISATEUR/ChromeProfile")
 options.add_argument(r"profile-directory=Default")
-driver = webdriver.Chrome(options=options)
 options.add_argument("--disable-features=IsolateOrigins,site-per-process")
 options.add_argument("--disable-popup-blocking")
 options.add_argument("--disable-extensions")
+driver = webdriver.Chrome(options=options)
 
 time.sleep(2)
 
@@ -62,10 +61,11 @@ else:
     mois_suivant = int(mois) + 1
     annee_suivante = int(annee)
 date_fin = datetime.datetime(annee_suivante, mois_suivant, 1, 0, 0, 0)
+
 startDate = int(time.mktime(date_debut.timetuple()) * 1000)
 endDate = int(time.mktime(date_fin.timetuple()) * 1000)
 
-URL_COMMANDES = f"https://vendeur.pourdebon.com/mmp/shop/order/all?period=%7B%22startDate%22%3A{startDate}%2C%22endDate%22%3A{endDate}%7D&periodAuto=true&select-search=orderId&limit=200&sort=order-list-date-created-id%2CDESC&statuses=%5B%22Re%C3%A7ue%3D%3D%5C%22RECEIVED%5C%22%22%5D"
+URL_COMMANDES = f"https://exemple.com/orders?startDate={startDate}&endDate={endDate}"
 driver.get(URL_COMMANDES)
 
 time.sleep(4)
@@ -75,7 +75,6 @@ hauteur_element = driver.execute_script("return arguments[0].offsetHeight;", com
 time.sleep(1)
 
 nouvelles_factures = []
-
 commandes_count = len(driver.find_elements(By.XPATH, "//div[contains(@class, 'ffbKvt')]"))
 num_commande = str(int(int(dernier_num_commande) + commandes_count + 1))
 scroll_value = 0
